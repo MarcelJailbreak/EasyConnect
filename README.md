@@ -1,37 +1,43 @@
-# EasyConnect - Voice Chat Overlay
+# EasyConnect - Real-Time Voice Chat Overlay 🎤
 
-Ein modernes Voice Chat Overlay mit Server-Client-Architektur, das in Echtzeit den aktuellen Sprecher und verbundene Benutzer anzeigt.
+Ein **echter Voice-Chat** mit Overlay, der in Echtzeit Audio zwischen Benutzern überträgt und den aktuellen Sprecher anzeigt.
 
-## 🚀 Features
+## 🚀 **Features**
 
-- **Real-time Overlay**: Zeigt aktuelle Sprecher und verbundene Benutzer an
-- **Server-Client Architektur**: Zentrale Verwaltung aller Verbindungen
-- **Automatische Positionierung**: Fenster wird automatisch oben rechts positioniert
-- **Cross-Platform**: Funktioniert auf Windows, macOS und Linux
-- **Dark Theme**: Modernes, dunkles Design
-- **Heartbeat System**: Automatische Verbindungsüberwachung
-- **Graceful Shutdown**: Sauberes Beenden aller Threads
+- **🎤 Echter Voice-Chat**: Mikrofon-Aufnahme und Audio-Übertragung
+- **🔊 Voice Activity Detection**: Automatische Erkennung wer spricht
+- **⌨️ Push-to-Talk**: Leertaste zum Sprechen
+- **🎵 Audio-Qualitäts-Einstellungen**: Low/Medium/High Quality
+- **🔇 Mute/Unmute**: Stummschaltung für einzelne Benutzer
+- **🏠 Voice Rooms**: Mehrere Sprachkanäle
+- **📡 WebSocket**: Echtzeit-Kommunikation
+- **🌐 Cross-Platform**: Windows, macOS, Linux
+- **🎨 Dark Theme**: Modernes, dunkles Design
 
-## 📁 Projektstruktur
+## 📁 **Projektstruktur**
 
 ```
 esc/
-├── easy_connect_overlay.py      # Standalone Overlay (ohne Server)
-├── easy_connect_client.py       # Client mit Server-Verbindung
-├── server.py                    # Flask Server für Render
+├── voice_server.py              # Voice-Chat Server mit WebSocket
+├── voice_client.py              # Voice-Chat Client mit Mikrofon
+├── easy_connect_overlay.py      # Standalone Overlay (ohne Voice)
+├── easy_connect_client.py       # Client ohne Voice (nur Status)
+├── server.py                    # Alter Server (ohne Voice)
 ├── requirements.txt             # Python-Abhängigkeiten
 ├── render.yaml                  # Render Deployment-Konfiguration
 └── README.md                    # Diese Datei
 ```
 
-## 🛠️ Installation
+## 🛠️ **Installation**
 
-### Voraussetzungen
+### **Voraussetzungen**
 
 - Python 3.8 oder höher
 - pip (Python Package Manager)
+- **Mikrofon** (für Voice-Chat)
+- **Lautsprecher/Kopfhörer** (für Audio-Playback)
 
-### Lokale Installation
+### **Lokale Installation**
 
 1. **Repository klonen oder Dateien herunterladen**
 2. **Abhängigkeiten installieren:**
@@ -39,41 +45,66 @@ esc/
    pip install -r requirements.txt
    ```
 
-### Zusätzliche Abhängigkeiten für Client
+### **Wichtige Audio-Abhängigkeiten**
 
 ```bash
-pip install requests
+# Für Windows (falls PyAudio Probleme macht)
+pip install pipwin
+pipwin install pyaudio
+
+# Für macOS
+brew install portaudio
+pip install pyaudio
+
+# Für Linux
+sudo apt-get install portaudio19-dev python3-pyaudio
+pip install pyaudio
 ```
 
-## 🚀 Verwendung
+## 🚀 **Verwendung**
 
-### 1. Standalone Overlay (ohne Server)
+### **1. Voice-Chat Server starten**
+```bash
+python voice_server.py
+```
+- Server läuft auf `http://localhost:5000`
+- WebSocket-Support für Echtzeit-Audio
+- Verwaltet Voice-Rooms und Benutzer
 
+### **2. Voice-Chat Client starten**
+```bash
+# Mit lokalem Server
+python voice_client.py
+
+# Mit spezifischer Server-URL
+python voice_client.py http://localhost:5000
+```
+
+### **3. Standalone Overlay (ohne Voice)**
 ```bash
 python easy_connect_overlay.py
 ```
 
-### 2. Client mit Server-Verbindung
+## 🎤 **Voice-Chat Features**
 
-```bash
-# Lokaler Server
-python easy_connect_client.py
+### **Mikrofon-Steuerung**
+- **🔇 Stummschalten**: Mikrofon komplett deaktivieren
+- **🎤 Push-to-Talk**: Nur bei gedrückter Leertaste sprechen
+- **🎵 Voice Activity Detection**: Automatische Sprecher-Erkennung
 
-# Mit spezifischer Server-URL
-python easy_connect_client.py http://localhost:5000
-```
+### **Audio-Qualität**
+- **Low**: 8kHz, 8-bit (weniger Bandbreite)
+- **Medium**: 12kHz, 12-bit (ausgewogen)
+- **High**: 16kHz, 16-bit (beste Qualität)
 
-### 3. Server starten
+### **Voice Rooms**
+- **Standard-Room**: "default"
+- **Mehrere Kanäle**: Für verschiedene Gruppen
+- **Room-Wechsel**: Benutzer können zwischen Räumen wechseln
 
-```bash
-python server.py
-```
+## 🌐 **Deployment auf Render**
 
-Der Server läuft dann auf `http://localhost:5000`
-
-## 🌐 Deployment auf Render
-
-### Automatisches Deployment
+### **Automatisches Deployment**
 
 1. **Repository auf GitHub hochladen**
 2. **Bei Render anmelden** (https://render.com)
@@ -81,149 +112,142 @@ Der Server läuft dann auf `http://localhost:5000`
 4. **GitHub Repository verbinden**
 5. **Automatisches Deployment starten**
 
-### Manuelles Deployment
+### **Konfiguration für Voice-Server**
 
-1. **Render Dashboard öffnen**
-2. **"New Web Service" klicken**
-3. **Repository verbinden**
-4. **Konfiguration:**
-   - **Name**: `easyconnect-server`
-   - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn server:app`
-   - **Plan**: Free (für den Start)
-
-### Environment Variables
-
-```bash
-PYTHON_VERSION=3.9.16
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: easyconnect-voice-server
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 voice_server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.16
 ```
 
-## 🔧 API Endpoints
+## 🔧 **API Endpoints**
 
-### Server API
+### **Voice Server API**
 
 - `GET /` - API Informationen
 - `POST /api/connect` - Benutzer verbinden
 - `POST /api/disconnect` - Benutzer trennen
 - `GET /api/users` - Alle verbundenen Benutzer
-- `POST /api/speaker` - Aktuellen Sprecher setzen
+- `POST /api/room/join` - Voice-Room beitreten
+- `GET /api/rooms` - Alle Voice-Rooms
 - `GET /api/status` - Server-Status
 - `POST /api/heartbeat` - Heartbeat senden
 - `GET /health` - Health Check für Render
 
-### Beispiel API-Aufrufe
+### **WebSocket Events**
 
-```bash
-# Benutzer verbinden
-curl -X POST http://localhost:5000/api/connect \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser"}'
+- `connect` - Client verbindet sich
+- `disconnect` - Client trennt sich
+- `join_room` - Voice-Room beitreten
+- `leave_room` - Voice-Room verlassen
+- `voice_data` - Audio-Daten senden/empfangen
+- `voice_settings` - Audio-Einstellungen aktualisieren
 
-# Alle Benutzer abrufen
-curl http://localhost:5000/api/users
+## 🎮 **Verwendung**
 
-# Sprecher setzen
-curl -X POST http://localhost:5000/api/speaker \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser"}'
-```
+### **Overlay-Fenster**
 
-## 🐛 Bekannte Probleme & Lösungen
+- **Position**: Wird automatisch oben rechts positioniert
+- **Größe**: 300x400 Pixel (Voice-Client)
+- **Always-on-top**: Bleibt über anderen Fenstern
+- **Keine System-Buttons**: Minimieren/Maximieren/Schließen deaktiviert
 
-### 1. Threading-Probleme behoben
-- **Problem**: Threads liefen endlos weiter
-- **Lösung**: Saubere Thread-Verwaltung mit `should_stop` Flag
+### **Voice-Status-Anzeigen**
 
-### 2. Memory Leaks verhindert
-- **Problem**: Widgets wurden nicht aufgeräumt
-- **Lösung**: Proper cleanup in `update_users_list()`
+- **🎤 Mikrofon: Bereit** - Mikrofon funktionsfähig
+- **🎤 Mikrofon: Aktiv** - Mikrofon aktiviert
+- **🎤 Mikrofon: SPRECHE** - Benutzer spricht gerade
+- **🎤 Mikrofon: Stumm** - Mikrofon deaktiviert
 
-### 3. Platform-spezifische Fehler
-- **Problem**: Windows-spezifischer Code auf anderen Plattformen
-- **Lösung**: Platform-Detection und bedingte Ausführung
+### **Steuerung**
 
-### 4. Graceful Shutdown
-- **Problem**: Anwendung konnte nicht sauber beendet werden
-- **Lösung**: `on_closing()` Methode mit Thread-Cleanup
+- **Leertaste**: Push-to-Talk (wenn aktiviert)
+- **Mute-Button**: Mikrofon stummschalten
+- **PTT-Button**: Zwischen Push-to-Talk und VAD wechseln
 
-### 5. Exception Handling
-- **Problem**: Fehler führten zu Abstürzen
-- **Lösung**: Try-catch Blöcke in allen kritischen Bereichen
+## 🔒 **Sicherheit & Datenschutz**
 
-## 🔍 Debugging
+- **Keine Audio-Speicherung**: Audio wird nicht auf dem Server gespeichert
+- **Ende-zu-Ende**: Audio wird direkt zwischen Clients übertragen
+- **Keine Authentifizierung**: Für Demo-Zwecke (kann erweitert werden)
+- **CORS aktiviert**: Für lokale Entwicklung
 
-### Logs aktivieren
+## 🐛 **Bekannte Probleme & Lösungen**
+
+### **1. PyAudio Installation**
+- **Problem**: PyAudio lässt sich nicht installieren
+- **Lösung**: PortAudio vorher installieren (siehe Installation)
+
+### **2. Mikrofon-Zugriff**
+- **Problem**: Kein Mikrofon-Zugriff
+- **Lösung**: Browser-Berechtigungen prüfen, Mikrofon freigeben
+
+### **3. Audio-Latenz**
+- **Problem**: Hohe Verzögerung bei Audio
+- **Lösung**: Audio-Qualität auf "Low" setzen, Netzwerk prüfen
+
+### **4. WebSocket-Verbindung**
+- **Problem**: WebSocket-Verbindung schlägt fehl
+- **Lösung**: Server läuft, Firewall-Einstellungen prüfen
+
+## 🔍 **Debugging**
+
+### **Logs aktivieren**
 
 ```python
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
 
-### Häufige Fehler
+### **Audio-Test**
 
-1. **Port bereits belegt**: Anderen Port wählen oder laufenden Prozess beenden
-2. **Firewall-Blockierung**: Port 5000 freigeben
-3. **CORS-Fehler**: Server läuft nicht oder CORS nicht aktiviert
+```bash
+# Teste Mikrofon
+python -c "import sounddevice as sd; print(sd.query_devices())"
 
-## 📱 Verwendung
+# Teste Audio-Playback
+python -c "import sounddevice as sd; sd.play(sd.rec(16000, samplerate=16000, channels=1, dtype='int16'), 16000)"
+```
 
-### Overlay-Fenster
+## 🚀 **Nächste Schritte**
 
-- **Position**: Wird automatisch oben rechts positioniert
-- **Größe**: 250x220 Pixel (Client) / 200x180 Pixel (Standalone)
-- **Always-on-top**: Bleibt über anderen Fenstern
-- **Keine System-Buttons**: Minimieren/Maximieren/Schließen deaktiviert
+### **Verbesserungen**
 
-### Status-Anzeigen
+1. **🔐 Authentifizierung**: Benutzer-Login-System
+2. **🔒 Verschlüsselung**: SSL/TLS für sichere Kommunikation
+3. **📱 Mobile App**: React Native oder Flutter Client
+4. **🎵 Audio-Filter**: Echo-Cancellation, Noise Reduction
+5. **📹 Video-Chat**: Webcam-Integration
 
-- **● Online (Server)**: Verbunden mit Server
-- **● Offline**: Keine Server-Verbindung
-- **● Verbinde...**: Verbindungsaufbau läuft
+### **Skalierung**
 
-### Benutzerliste
+1. **⚡ Redis**: Session-Management und Caching
+2. **🐳 Docker**: Containerisierung für einfaches Deployment
+3. **📊 Monitoring**: Audio-Qualitäts-Metriken
+4. **🌍 CDN**: Globale Audio-Verteilung
 
-- **Eigener Name**: Weiß hervorgehoben
-- **Andere Benutzer**: Grau dargestellt
-- **Aktueller Sprecher**: Wird in der Mitte angezeigt
-
-## 🔒 Sicherheit
-
-- **Keine Authentifizierung**: Für Demo-Zwecke
-- **In-Memory Storage**: Daten gehen bei Neustart verloren
-- **CORS aktiviert**: Für lokale Entwicklung
-- **Timeout-Handling**: Automatische Bereinigung inaktiver Benutzer
-
-## 🚀 Nächste Schritte
-
-### Verbesserungen
-
-1. **Datenbank-Integration**: PostgreSQL für persistente Daten
-2. **WebSocket**: Echtzeit-Updates ohne Polling
-3. **Authentifizierung**: Benutzer-Login-System
-4. **Verschlüsselung**: SSL/TLS für sichere Kommunikation
-5. **Mobile App**: React Native oder Flutter Client
-
-### Skalierung
-
-1. **Load Balancer**: Mehrere Server-Instanzen
-2. **Redis**: Session-Management und Caching
-3. **Docker**: Containerisierung für einfaches Deployment
-4. **Monitoring**: Logs und Metriken
-
-## 📞 Support
+## 📞 **Support**
 
 Bei Problemen oder Fragen:
 
 1. **Issues auf GitHub erstellen**
 2. **Logs überprüfen** (Konsolen-Ausgabe)
 3. **Server-Status testen** (`/health` Endpoint)
-4. **Browser-Entwicklertools** für API-Aufrufe
+4. **Audio-Geräte prüfen** (Mikrofon, Lautsprecher)
+5. **Netzwerk-Verbindung testen**
 
-## 📄 Lizenz
+## 📄 **Lizenz**
 
 Dieses Projekt ist für Bildungs- und Demo-Zwecke erstellt. Freie Verwendung erlaubt.
 
 ---
 
-**Viel Erfolg mit EasyConnect! 🎉** 
+**🎉 Jetzt kannst du wirklich sprechen und hören! 🎤🔊** 
