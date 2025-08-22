@@ -475,6 +475,8 @@ if __name__ == '__main__':
     print("Server will be available at: http://localhost:5000")
     print("WebSocket support enabled for real-time voice chat")
     
-    # For production on Render, use:
-    # socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False) 
+    # For production on Render, pass allow_unsafe_werkzeug=True to permit
+    # running with Werkzeug in this environment. Alternatively, configure
+    # gunicorn with eventlet as documented in the README.
+    socketio.run(app, host='0.0.0.0', port=5000, debug=False,
+                 allow_unsafe_werkzeug=True)
