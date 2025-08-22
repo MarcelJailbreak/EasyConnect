@@ -1,6 +1,19 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from flask_socketio import SocketIO, emit, join_room, leave_room
+try:
+    from flask import Flask, request, jsonify
+    from flask_cors import CORS
+    from flask_socketio import SocketIO, emit, join_room, leave_room
+except ImportError:
+    # If the required server libraries are unavailable (e.g. in a restricted
+    # environment), inform the user and exit. This prevents runtime
+    # tracebacks from confusing users when dependencies are missing.
+    print(
+        "Die erforderlichen Flask/SocketIO-Bibliotheken sind nicht verfügbar. "
+        "Bitte installieren Sie Flask, Flask-CORS und Flask-SocketIO, um den "
+        "Voice-Server auszuführen."
+    )
+    import sys
+    sys.exit(1)
+
 import json
 import time
 import threading
@@ -400,6 +413,29 @@ def handle_voice_settings(data):
             
     except Exception as e:
         print(f"Error updating voice settings: {e}")
+
+# -----------------------------------------------------------------------------
+# Custom events
+# -----------------------------------------------------------------------------
+
+@socketio.on('heartbeat')
+def handle_heartbeat(data):
+    """
+    Update the heartbeat for a connected user. Clients emit this event
+    periodically to indicate that they are still active. Without this the
+    server relies solely on HTTP heartbeats. This event records the current
+    timestamp for the user so that they are not removed by the cleanup thread.
+    """
+    try:
+        username = data.get('username')
+        client_id = data.get('client_id')
+        if not username:
+            return
+        if username in connected_users:
+            last_activity[username] = datetime.now()
+            connected_users[username].last_heartbeat = datetime.now()
+    except Exception as e:
+        print(f"Error handling heartbeat: {e}")
 
 # Cleanup thread for inactive users
 def cleanup_inactive_users():
