@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r server-requirements.txt
-    startCommand: gunicorn --worker-class eventlet -w 1 voice_server:app
+    startCommand: python voice_server.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16 
