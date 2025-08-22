@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: easyconnect-server
+    name: easyconnect-voice-server
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn server:app
+    buildCommand: pip install -r server-requirements.txt
+    startCommand: gunicorn --worker-class eventlet -w 1 voice_server:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16 
